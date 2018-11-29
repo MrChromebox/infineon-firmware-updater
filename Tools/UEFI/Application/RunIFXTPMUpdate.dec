@@ -1,0 +1,10 @@
+##
+#	@file		RunIFXTPMUpdate.dec
+#	@copyright	Copyright (c) Infineon Technologies AG
+##
+
+[Defines]
+	DEC_SPECIFICATION = 0x00010005
+	PACKAGE_NAME = RunIFXTPMUpdatePkg
+	PACKAGE_GUID =  8582FDC1-266D-4477-9018-724BBBDD4A6E
+	PACKAGE_VERSION = 1.00
