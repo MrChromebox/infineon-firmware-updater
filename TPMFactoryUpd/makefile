@@ -21,10 +21,12 @@ CFLAGS+= \
 	-Wextra \
 	-std=gnu1x -Wpedantic \
 	-Wno-missing-field-initializers \
+	-Werror \
 	-Wshadow \
 	-Wcast-align \
 	-Wswitch-default \
 	-Wunreachable-code \
+	-Wimplicit-fallthrough=1 \
 	-DLINUX
 
 # Additional flags to make the source compile with clang.
@@ -117,7 +119,6 @@ TPMFactoryUpd: $(OBJFILES)
 	$(MAKE) -C ../Common/Crypt
 	# And run the actual makefile job
 	$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
-	$(STRIP)
 
 clean:
 	# Call shared sub-makefiles to cleanup archives

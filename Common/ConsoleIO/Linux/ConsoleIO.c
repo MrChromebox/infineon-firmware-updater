@@ -143,7 +143,7 @@ ConsoleIO_ReadWChar()
 			int nIndex = 0;
 			for (nIndex = 0; nIndex < nBytesWaiting; nIndex++)
 			{
-				wchRead = getwchar();
+				getwchar();
 			}
 			wchRead = EOF;
 		}
@@ -193,9 +193,9 @@ ConsoleIO_WritePlatformV(
 			case -1:
 				// Buffer is too small write what fits to the buffer and return
 				// insufficient buffer error
-				nWritten = wprintf(wszBuf);
+				wprintf(wszBuf);
 				if (PfNewLine)
-					nWritten = wprintf(L"\n");
+					wprintf(L"\n");
 
 				unReturnValue = RC_E_BUFFER_TOO_SMALL;
 				break;
@@ -203,9 +203,9 @@ ConsoleIO_WritePlatformV(
 			default:
 				// Message was formatted correctly
 				// print it to the stdout
-				nWritten = wprintf(wszBuf);
+				wprintf(wszBuf);
 				if (PfNewLine)
-					nWritten = wprintf(L"\n");
+					wprintf(L"\n");
 
 				unReturnValue = RC_SUCCESS;
 				break;

@@ -85,7 +85,7 @@ ConfigSettings_Parse(
 _Check_return_
 unsigned int
 ConfigSettings_FinalizeParsing(
-	_In_ unsigned int PunReturnValue);
+	_In_ const unsigned int PunReturnValue);
 
 #ifdef __cplusplus
 }

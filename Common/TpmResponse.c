@@ -435,6 +435,8 @@ TpmResponse_FormatZeroGetMessage(
 		if (F0_RC_FLAG_BIT_9_RESERVED & PunErrorCode)
 		{
 			unReturnValue = Platform_StringFormat(PwszResponseBuffer, &PunResponseBufferSize, L"Invalid response code (Bit 9 is not zero).");
+			if (RC_SUCCESS != unReturnValue)
+				break;
 			unReturnValue = RC_E_BAD_PARAMETER;
 			break;
 		}
@@ -462,6 +464,9 @@ TpmResponse_FormatZeroGetMessage(
 		else
 			// Code is a TPM1.2 response code
 			unReturnValue = TpmResponse_TPM12GetMessage(PunErrorCode, wszTemp, unTempSize);
+
+		if (RC_SUCCESS != unReturnValue)
+			break;
 
 		// Add response message to response buffer
 		PunResponseBufferSize = unOriginalSize;
@@ -518,6 +523,8 @@ TpmResponse_FormatZeroErrorGetMessage(
 		if (NULL == wszMessage)
 		{
 			unReturnValue = Platform_StringFormat(PwszResponseBuffer, &PunResponseBufferSize, L"Unknown error code: 0x%.08X.", PunErrorCode);
+			if (RC_SUCCESS != unReturnValue)
+				break;
 			unReturnValue = RC_E_BAD_PARAMETER;
 			break;
 		}
@@ -574,6 +581,8 @@ TpmResponse_FormatOneErrorGetMessage(
 		if (NULL == wszMessage)
 		{
 			unReturnValue = Platform_StringFormat(PwszResponseBuffer, &PunResponseBufferSize, L"Unknown error code: 0x%.08X.", PunErrorCode);
+			if (RC_SUCCESS != unReturnValue)
+				break;
 			unReturnValue = RC_E_BAD_PARAMETER;
 			break;
 		}
@@ -630,6 +639,8 @@ TpmResponse_FormatZeroWarningGetMessage(
 		if (NULL == wszMessage)
 		{
 			unReturnValue = Platform_StringFormat(PwszResponseBuffer, &PunResponseBufferSize, L"Unknown warning code: 0x%.08X.", PunErrorCode);
+			if (RC_SUCCESS != unReturnValue)
+				break;
 			unReturnValue = RC_E_BAD_PARAMETER;
 			break;
 		}
@@ -701,6 +712,8 @@ TpmResponse_TPM12GetMessage(
 		if (NULL == wszMessage)
 		{
 			unReturnValue = Platform_StringFormat(PwszResponseBuffer, &PunResponseBufferSize, L"Unknown TPM1.2 response code: 0x%.08X.", PunErrorCode);
+			if (RC_SUCCESS != unReturnValue)
+				break;
 			unReturnValue = RC_E_BAD_PARAMETER;
 			break;
 		}

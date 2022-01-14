@@ -292,7 +292,7 @@ ConfigSettings_Parse(
 _Check_return_
 unsigned int
 ConfigSettings_FinalizeParsing(
-	_In_ unsigned int PunReturnValue)
+	_In_ const unsigned int PunReturnValue)
 {
 	unsigned int unReturnValue = RC_E_FAIL;
 	const wchar_t wszErrorMsgFormat[] = L"PropertyStorage_GetValueByKey failed while getting the property '%ls'.";

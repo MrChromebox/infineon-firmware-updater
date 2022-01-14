@@ -120,6 +120,10 @@ CommandLineParser_Parse(
 				{
 					unUpdateType = UPDATE_TYPE_CONFIG_FILE;
 				}
+				else if (0 == Platform_StringCompare(wszValue, CMD_UPDATE_OPTION_TPM12_OWNERAUTH, RG_LEN(CMD_UPDATE_OPTION_TPM12_OWNERAUTH), TRUE))
+				{
+					unUpdateType = UPDATE_TYPE_TPM12_OWNERAUTH;
+				}
 				else
 				{
 					unReturnValue = RC_E_BAD_COMMANDLINE;

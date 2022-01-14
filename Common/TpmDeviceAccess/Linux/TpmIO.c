@@ -18,9 +18,14 @@
 #include "Logging.h"
 #include "DeviceAccess.h"
 #include "DeviceAccessTpmDriver.h"
+#include "Platform.h"
 #include "TPM_TIS.h"
 #include "PropertyStorage.h"
 
+/// Maximum amount of times to retry the TPM command in case the TPM is not responsive.
+#define TPM_FU_MAX_RETRIES 5U
+/// Default wait time in milliseconds in between two of the above checks.
+#define TPM_FU_RETRY_WAIT_TIME 1000
 /// Global flag to signalize if module is connected or disconnected
 BOOL g_fConnected = 0;
 /// Define for locality configuration setting property
@@ -323,11 +328,28 @@ TPMIO_Transmit(
 			}
 			case TPM_DEVICE_ACCESS_DRIVER:
 			{
-				unReturnValue = DeviceAccessTpmDriver_Transmit(
-									PrgbRequestBuffer,
-									(UINT16)PunRequestBufferSize,
-									PrgbResponseBuffer,
-									PpunResponseBufferSize);
+				unsigned int unRetryCounter = 0;
+
+				for (unRetryCounter = 0; unRetryCounter < TPM_FU_MAX_RETRIES; unRetryCounter++)
+				{
+					unReturnValue = DeviceAccessTpmDriver_Transmit(
+										PrgbRequestBuffer,
+										(UINT16)PunRequestBufferSize,
+										PrgbResponseBuffer,
+										PpunResponseBufferSize);
+					// Retry after some time in case TPM is not responsive
+					if (RC_SUCCESS != unReturnValue)
+					{
+						LOGGING_WRITE_LEVEL1_FMT(L"Error: TPM communication failed with (0x%.8x).", unReturnValue);
+						LOGGING_WRITE_LEVEL1_FMT(L"TPM might not be ready at the moment (Count:%d)", unRetryCounter);
+						Platform_Sleep(TPM_FU_RETRY_WAIT_TIME);
+						continue;
+					}
+					else
+					{
+						break;
+					}
+				}
 
 				if (RC_SUCCESS != unReturnValue)
 					LOGGING_WRITE_LEVEL1(L"Transmission of data via /dev/tpm0 failed!");

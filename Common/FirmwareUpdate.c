@@ -702,20 +702,23 @@ FirmwareUpdate_IsFirmwareUpdatable(
 				break;
 			}
 
-			// Check which version is the active one
-			securityModuleLogicInfo.sSecurityModuleLogic.sFirmwareConfiguration.FirmwarePackage[0].StaleVersion != INACTIVE_STALE_VERSION ?
-			(unActiveVersion = securityModuleLogicInfo.sSecurityModuleLogic.sFirmwareConfiguration.FirmwarePackage[0].Version) :
-			(unActiveVersion = securityModuleLogicInfo.sSecurityModuleLogic.sFirmwareConfiguration.FirmwarePackage[1].Version);
-
-			// Verify against allowed source versions
-			// VERSION_3 or greater: uses data from meta data section
-			// Others: uses data from parameter block
-			for (unIndex = 0; unIndex < PpsFirmwareImage->usIntSourceVersionCount; unIndex++)
+			// Get the active firmware package.
+			// Models SLB966x and SLB9670 have INACTIVE_STALE_VERSION tag. The firmware package without INACTIVE_STALE_VERSION tag is active.
+			// Model SLB9655 does not have INACTIVE_STALE_VERSION tag. The first firmware package is active.
 			{
-				if (PpsFirmwareImage->rgunIntSourceVersions[unIndex] == unActiveVersion)
+				unsigned int unField = securityModuleLogicInfo.sSecurityModuleLogic.sFirmwareConfiguration.FirmwarePackage[0].StaleVersion != INACTIVE_STALE_VERSION ? 0 : 1;
+				unActiveVersion = securityModuleLogicInfo.sSecurityModuleLogic.sFirmwareConfiguration.FirmwarePackage[unField].Version;
+
+				// Verify against allowed source versions
+				// VERSION_3 or greater: uses data from meta data section
+				// Others: uses data from parameter block
+				for (unIndex = 0; unIndex < PpsFirmwareImage->usIntSourceVersionCount; unIndex++)
 				{
-					fActiveVersionVerified = TRUE;
-					break;
+					if (PpsFirmwareImage->rgunIntSourceVersions[unIndex] == unActiveVersion)
+					{
+						fActiveVersionVerified = TRUE;
+						break;
+					}
 				}
 			}
 
@@ -1030,6 +1033,8 @@ FirmwareUpdate_CalculateState(
 							if (RC_SUCCESS == unReturnValue)
 							{
 								unReturnValue = Platform_MemoryCopy(PpsTpmState->testResult, sizeof(PpsTpmState->testResult), rgbSelftestResult, unSelftestResultSize);
+								if (RC_SUCCESS != unReturnValue)
+									break;
 								PpsTpmState->unTestResultLen = unSelftestResultSize;
 							}
 						}

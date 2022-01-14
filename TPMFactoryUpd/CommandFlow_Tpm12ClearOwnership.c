@@ -150,7 +150,10 @@ CommandFlow_Tpm12ClearOwnership_Execute(
 	}
 	WHILE_FALSE_END;
 
-	PpTpmClearOwnership->unReturnCode = unReturnValue;
+	if (NULL != PpTpmClearOwnership)
+	{
+		PpTpmClearOwnership->unReturnCode = unReturnValue;
+	}
 	unReturnValue = RC_SUCCESS;
 
 	return unReturnValue;

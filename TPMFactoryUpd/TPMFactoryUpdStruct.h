@@ -72,7 +72,9 @@ typedef enum td_ENUM_UPDATE_TYPES
 	/// Update type for TPM2.0 using empty platformAuth
 	UPDATE_TYPE_TPM20_EMPTYPLATFORMAUTH = 3,
 	/// Update type for using settings from configuration file
-	UPDATE_TYPE_CONFIG_FILE = 4
+	UPDATE_TYPE_CONFIG_FILE = 4,
+	/// Update type for TPM1.2 using owner auth
+	UPDATE_TYPE_TPM12_OWNERAUTH = 5
 } ENUM_UPDATE_TYPES;
 
 /**

@@ -1138,6 +1138,7 @@ TSS_TPML_MAX_BUFFER_Unmarshal(
 		if ((NULL == PprgbBuffer) || (NULL == *PprgbBuffer) || (NULL == PpnBufferSize))
 		{
 			unReturnValue = RC_E_BAD_PARAMETER;
+			break;
 		}
 		unReturnValue = TSS_UINT32_Unmarshal((UINT32 *) & (PpTarget->count), PprgbBuffer, PpnBufferSize);
 		if (RC_SUCCESS != unReturnValue)

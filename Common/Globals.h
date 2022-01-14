@@ -28,7 +28,7 @@
 /// The maximum supported message size
 #define MAX_MESSAGE_SIZE		6144
 /// Application version
-#define APP_VERSION L"01.01.2459.00" // Will be patched by build process
+#define APP_VERSION L"01.01.2529.00" // Will be patched by build process
 /// Define for usage of big console buffer size for more columns and lines
 #define	CONSOLE_BUFFER_BIG		1
 /// Define for untouched console buffer

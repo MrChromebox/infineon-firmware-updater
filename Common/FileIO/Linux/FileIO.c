@@ -89,8 +89,6 @@ FileIO_GetBOMType(
 
 		unSizeRead = (unsigned int)fread(&unBom, 1, sizeof (unBom), PpvFile);
 
-		unReturnValue = RC_SUCCESS;
-
 		switch(unSizeRead)
 		{
 			case 4:

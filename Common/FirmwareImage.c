@@ -207,8 +207,6 @@ FirmwareImage_Unmarshal(
 
 			*PprgbBuffer = (BYTE*)(*PprgbBuffer + usSourceVersionsSize);
 			*PpnBufferSize -= usSourceVersionsSize;
-
-			unReturnValue = RC_SUCCESS;
 		}
 
 		// Unmarshal bTargetTpmFamily

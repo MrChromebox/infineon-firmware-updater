@@ -85,6 +85,19 @@ unsigned int
 CommandFlow_TpmUpdate_PrepareTPM12Ownership();
 
 /**
+ *	@brief		Check that we have TPM owner auth.
+ *	@details	The corresponding TPM Owner authentication is described in the user manual.
+ *
+ *	@retval		RC_SUCCESS						TPM owner auth works as expected.
+ *	@retval		RC_E_FAIL						An unexpected error occurred.
+ *	@retval		RC_E_TPM12_DISABLED_DEACTIVATED	In case the TPM is disabled and deactivated.
+ *	@retval		...								Error codes from Micro TSS functions
+ */
+_Check_return_
+unsigned int
+CommandFlow_TpmUpdate_PrepareTPM12OwnerAuth();
+
+/**
  *	@brief		Parse the update config settings file
  *	@details
  *

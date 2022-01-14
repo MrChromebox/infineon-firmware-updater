@@ -34,6 +34,7 @@ int main(int PnArgc, char* PrgszArgv[])
 	wchar_t** prgwszArgv = NULL;
 	unsigned int unReturnCode = -1;
 	int nCount = -1;
+	int nFreeCount = -1;
 
 	do
 	{
@@ -65,6 +66,13 @@ int main(int PnArgc, char* PrgszArgv[])
 				unReturnCode = RC_E_FAIL;
 				break;
 			}
+			unReturnCode = RC_SUCCESS;
+		}
+
+		// Verify if conversion succeeded
+		if (RC_SUCCESS != unReturnCode)
+		{
+			break;
 		}
 
 		// Run TPMFactoryUpd
@@ -73,9 +81,9 @@ int main(int PnArgc, char* PrgszArgv[])
 	WHILE_FALSE_END;
 
 	// Free up conversion memory
-	for (nCount = 0; nCount < PnArgc; nCount++)
+	for (nFreeCount = 0; nFreeCount < nCount; nFreeCount++)
 	{
-		free(prgwszArgv[nCount]);
+		free(prgwszArgv[nFreeCount]);
 	}
 	free(prgwszArgv);
 

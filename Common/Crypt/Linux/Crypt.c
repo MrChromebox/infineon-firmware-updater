@@ -24,6 +24,60 @@
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+static void *OPENSSL_zalloc(size_t num)
+{
+    void *ret = OPENSSL_malloc(num);
+
+    if (ret != NULL)
+        memset(ret, 0, num);
+    return ret;
+}
+
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
+{
+    /* If the fields n and e in r are NULL, the corresponding input
+     * parameters MUST be non-NULL for n and e.  d may be
+     * left NULL (in case only the public key is used).
+     */
+    if ((r->n == NULL && n == NULL)
+        || (r->e == NULL && e == NULL))
+        return 0;
+
+    if (n != NULL) {
+        BN_free(r->n);
+        r->n = n;
+    }
+    if (e != NULL) {
+        BN_free(r->e);
+        r->e = e;
+    }
+    if (d != NULL) {
+        BN_free(r->d);
+        r->d = d;
+    }
+
+    return 1;
+}
+
+static HMAC_CTX *HMAC_CTX_new(void)
+{
+    HMAC_CTX *ctx = OPENSSL_zalloc(sizeof(HMAC_CTX));
+    if (ctx) {
+        HMAC_CTX_init(ctx);
+    }
+    return ctx;
+}
+
+static void HMAC_CTX_free(HMAC_CTX *ctx)
+{
+    HMAC_CTX_cleanup(ctx);
+    OPENSSL_free(ctx);
+}
+
+#endif /* OPENSSL_VERSION_NUMBER */
+
 /// OAEP Pad
 static const BYTE g_rgbOAEPPad[] = { 'T', 'C', 'P', 'A' };
 
@@ -50,7 +104,6 @@ Crypt_HMAC(
 {
 	unsigned int unReturnValue = RC_E_FAIL;
 
-	HMAC_CTX *sContext = HMAC_CTX_new();
 	do
 	{
 		unsigned int unHmacLength = SHA1_DIGEST_SIZE;
@@ -64,15 +117,20 @@ Crypt_HMAC(
 		}
 
 		// Calculate HMAC
-		HMAC_CTX_reset(sContext);
+		HMAC_CTX* sContext = HMAC_CTX_new();
+		if (NULL == sContext)
+		{
+			unReturnValue = RC_E_FAIL;
+			break;
+		}
+
 		HMAC_Init_ex(sContext, PrgbKey, SHA1_DIGEST_SIZE, EVP_sha1(), NULL);
 		HMAC_Update(sContext, PrgbInputMessage, PusInputMessageSize);
 		HMAC_Final(sContext, PrgbHMAC, &unHmacLength);
+		HMAC_CTX_free(sContext);
 		unReturnValue = RC_SUCCESS;
 	}
 	WHILE_FALSE_END;
-
-	HMAC_CTX_free(sContext);
 
 	return unReturnValue;
 }
@@ -356,9 +414,11 @@ Crypt_EncryptRSA(
 		pbnExponent = BN_bin2bn((const BYTE*)PrgbPublicExponent, PunPublicExponentSize, pbnExponent);
 		if (NULL == pbnExponent)
 		{
+			BN_free(pbnPublicModulus);
 			unReturnValue = RC_E_FAIL;
 			break;
 		}
+
 		RSA_set0_key(pRSAPubKey, pbnPublicModulus, pbnExponent, NULL);
 
 		// Add padding to the decrypted data
@@ -472,6 +532,7 @@ Crypt_VerifySignature(
 		pbnExponent = BN_bin2bn(RSA_PUB_EXPONENT_KEY_ID_0, sizeof(RSA_PUB_EXPONENT_KEY_ID_0), pbnExponent);
 		if (NULL == pbnExponent)
 		{
+			BN_free(pbnModulus);
 			unReturnValue = RC_E_FAIL;
 			break;
 		}

@@ -313,7 +313,7 @@ CommandFlow_TpmUpdate_UpdateFirmware(
 			}
 
 			// Set TPM Owner authentication hash only in case of corresponding update type
-			if (UPDATE_TYPE_TPM12_TAKEOWNERSHIP == unUpdateType)
+			if (UPDATE_TYPE_TPM12_TAKEOWNERSHIP == unUpdateType || UPDATE_TYPE_TPM12_OWNERAUTH == unUpdateType)
 			{
 				unReturnValue = Platform_MemoryCopy(sFirmwareUpdateData.rgbOwnerAuthHash, sizeof(sFirmwareUpdateData.rgbOwnerAuthHash), s_ownerAuthData.authdata, sizeof(s_ownerAuthData.authdata));
 				if (RC_SUCCESS != unReturnValue)
@@ -354,7 +354,7 @@ CommandFlow_TpmUpdate_UpdateFirmware(
 	WHILE_FALSE_END;
 
 	// Try to close policy session in case of errors (only if session has already been started)
-	if ((RC_SUCCESS != unReturnValue || RC_SUCCESS != PpTpmUpdate->unReturnCode) && 0 != PpTpmUpdate->hPolicySession)
+	if ((RC_SUCCESS != unReturnValue || (NULL != PpTpmUpdate && RC_SUCCESS != PpTpmUpdate->unReturnCode)) && (NULL != PpTpmUpdate && 0 != PpTpmUpdate->hPolicySession))
 	{
 		IGNORE_RETURN_VALUE(TSS_TPM2_FlushContext(PpTpmUpdate->hPolicySession));
 		PpTpmUpdate->hPolicySession = 0;
@@ -443,6 +443,12 @@ CommandFlow_TpmUpdate_PrepareFirmwareUpdate(
 					PpTpmUpdate->unReturnCode = CommandFlow_TpmUpdate_PrepareTPM12Ownership();
 					unReturnValue = RC_SUCCESS;
 				}
+				else if (UPDATE_TYPE_TPM12_OWNERAUTH == unUpdateType)
+				{
+					// Check if owner authorization works.
+					PpTpmUpdate->unReturnCode = CommandFlow_TpmUpdate_PrepareTPM12OwnerAuth();
+					unReturnValue = RC_SUCCESS;
+				}
 				else
 				{
 					unReturnValue = RC_E_FAIL;
@@ -519,7 +525,7 @@ CommandFlow_TpmUpdate_IsFirmwareUpdatable(
 			if (PpTpmUpdate->sTpmState.attribs.tpm12)
 			{
 				// Check if the correct update type is set
-				if (UPDATE_TYPE_TPM12_DEFERREDPP != unUpdateType && UPDATE_TYPE_TPM12_TAKEOWNERSHIP != unUpdateType)
+				if (UPDATE_TYPE_TPM12_DEFERREDPP != unUpdateType && UPDATE_TYPE_TPM12_TAKEOWNERSHIP != unUpdateType && UPDATE_TYPE_TPM12_OWNERAUTH != unUpdateType)
 				{
 					PpTpmUpdate->unReturnCode = RC_E_INVALID_UPDATE_OPTION;
 					ERROR_STORE(PpTpmUpdate->unReturnCode, L"Wrong update type detected. The underlying TPM is a TPM1.2.");
@@ -528,7 +534,7 @@ CommandFlow_TpmUpdate_IsFirmwareUpdatable(
 				}
 
 				// Check if TPM already has an owner
-				if (PpTpmUpdate->sTpmState.attribs.tpm12owner)
+				if (PpTpmUpdate->sTpmState.attribs.tpm12owner && UPDATE_TYPE_TPM12_OWNERAUTH != unUpdateType)
 				{
 					PpTpmUpdate->unReturnCode = RC_E_TPM12_OWNED;
 					ERROR_STORE(PpTpmUpdate->unReturnCode, L"TPM1.2 Owner detected. Update cannot be done.");
@@ -742,6 +748,47 @@ CommandFlow_TpmUpdate_PrepareTPM12Ownership()
 }
 
 /**
+ *	@brief		Check that we have TPM owner auth.
+ *	@details	The corresponding TPM Owner authentication is described in the user manual.
+ *
+ *	@retval		RC_SUCCESS						TPM owner auth works as expected.
+ *	@retval		RC_E_FAIL						An unexpected error occurred.
+ *	@retval		RC_E_TPM12_DISABLED_DEACTIVATED	In case the TPM is disabled and deactivated.
+ *	@retval		...								Error codes from Micro TSS functions
+ */
+_Check_return_
+unsigned int
+CommandFlow_TpmUpdate_PrepareTPM12OwnerAuth()
+{
+	unsigned int unReturnValue = RC_SUCCESS;
+
+	LOGGING_WRITE_LEVEL4(LOGGING_METHOD_ENTRY_STRING);
+
+	do
+	{
+		unReturnValue = FirmwareUpdate_CheckOwnerAuthorization(s_ownerAuthData.authdata);
+		if (RC_SUCCESS != unReturnValue)
+		{
+			ERROR_STORE(unReturnValue, L"CheckOwnerAuthorization failed!");
+			break;
+		}
+	}
+	WHILE_FALSE_END;
+
+	// Map return value in case TPM is disabled or deactivated to corresponding tool exit code
+	if ((TPM_DEACTIVATED == (unReturnValue ^ RC_TPM_MASK)) ||
+			(TPM_DISABLED == (unReturnValue ^ RC_TPM_MASK)))
+	{
+		unReturnValue = RC_E_TPM12_DISABLED_DEACTIVATED;
+		ERROR_STORE(unReturnValue, L"CheckOwnerAuthorization failed!");
+	}
+
+	LOGGING_WRITE_LEVEL4_FMT(LOGGING_METHOD_EXIT_STRING_RET_VAL, unReturnValue);
+
+	return unReturnValue;
+}
+
+/**
  *	@brief		Parses the update configuration settings
  *	@details	Parses the update configuration settings for a settings file based update flow
  *
@@ -804,6 +851,14 @@ CommandFlow_TpmUpdate_Parse(
 				else if(0 == Platform_StringCompare(PwszValue, CMD_UPDATE_OPTION_TPM12_TAKEOWNERSHIP, PunValueSize, TRUE))
 				{
 					if (!PropertyStorage_AddKeyUIntegerValuePair(PROPERTY_CONFIG_FILE_UPDATE_TYPE12, UPDATE_TYPE_TPM12_TAKEOWNERSHIP))
+					{
+						ERROR_STORE_FMT(unReturnValue, wszErrorMsgFormat, PROPERTY_CONFIG_FILE_UPDATE_TYPE12);
+						break;
+					}
+				}
+				else if(0 == Platform_StringCompare(PwszValue, CMD_UPDATE_OPTION_TPM12_OWNERAUTH, PunValueSize, TRUE))
+				{
+					if (!PropertyStorage_AddKeyUIntegerValuePair(PROPERTY_CONFIG_FILE_UPDATE_TYPE12, UPDATE_TYPE_TPM12_OWNERAUTH))
 					{
 						ERROR_STORE_FMT(unReturnValue, wszErrorMsgFormat, PROPERTY_CONFIG_FILE_UPDATE_TYPE12);
 						break;
@@ -879,9 +934,6 @@ CommandFlow_TpmUpdate_Parse(
 					break;
 				}
 			}
-
-			// Unknown setting in current section ignore it
-			unReturnValue = RC_SUCCESS;
 		}
 
 		// Unknown section ignore it
